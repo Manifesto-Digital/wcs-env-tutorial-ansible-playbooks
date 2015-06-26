@@ -1,0 +1,87 @@
+---
+# roles/wcs/tasks/main.yml
+- name: Install Java 1.7
+  yum: name=java-1.7.0-openjdk state=present
+
+- name: Install NetCat
+  yum: name=nc.x86_64
+
+# Produce the user creation script
+- name: copy user creation script for wcs
+  template: src=create_wcs_user.sql dest=/tmp/create_wcs_user.sql  mode=0622
+
+# Create the database using sqlplus
+- name: create the database
+  shell: export ORACLE_HOME=/opt/oracle/instantclient_11_2; export LD_LIBRARY_PATH=$ORACLE_HOME:$LD_LIBRARY_PATH; export PATH=$ORACLE_HOME:$PATH; sqlplus system/manager@192.168.60.6:1521/XE < /tmp/create_wcs_user.sql
+
+# Start to prepare
+- name: unzip wcs top level installer
+  unarchive: src=ofm_sites_generic_11.1.1.8.0_disk1_1of1.zip dest=/opt/oracle
+  sudo: yes
+  tags: wcs
+
+# Create a directory for installation to run from
+- name: Creates directory for installation
+  file: path=/opt/oracle/install state=directory
+
+- name: unzip wcs installer
+  command: /usr/bin/unzip -q -o /opt/oracle/WebCenterSites_11.1.1.8.0/WCS_Sites/WCS_Sites.zip -d /opt/oracle/install
+  sudo: yes
+  tags: wcs
+
+
+# create wcs shared directory
+- file: path=/mnt/wcs-shared state=directory owner=tomcat group=tomcat
+
+# create wcs install directory
+- file: path=/opt/oracle/wcs state=directory owner=tomcat group=tomcat
+
+# change file ownership
+- file: path=/opt/oracle/install owner=tomcat group=tomcat recurse=yes
+
+# Copy jdbc driver
+- copy: src=ojdbc6.jar dest=/usr/share/tomcat/lib owner=tomcat group=tomcat mode=0644
+
+# Produce the user creation script
+- name: update the tomcat startup script
+  template: src=catalina.sh dest=/usr/share/tomcat/bin/catalina.sh  mode=0755  owner=tomcat group=tomcat 
+
+# Create the silent installer files from the templates provided
+- name: create the generic install.ini file
+  template: src=install.ini dest=/opt/oracle/install/Sites/install.ini  mode=0644 owner=tomcat group=tomcat 
+
+# Create the silent installer files from the templates provided
+- name: create the generic omii.ini file
+  template: src=generic_omii.ini dest=/opt/oracle/install/misc/silentinstaller/generic_omii.ini  mode=0644 owner=tomcat group=tomcat 
+
+# Configure the tomcat server.xml
+- name: update the tomcat server.xml
+  template: src=server.xml dest=/usr/share/tomcat/conf/server.xml  mode=0644 owner=tomcat group=tomcat 
+
+# Configure the tomcat server.xml
+- name: update the catalina.properties
+  template: src=catalina.properties dest=/usr/share/tomcat/conf  mode=0644 owner=tomcat group=tomcat 
+
+# Create the installer script from the templates provided
+- name: create the installer.sh file
+  template: src=installer.sh dest=/tmp/installer.sh  mode=0755 owner=tomcat group=tomcat 
+
+# Execute the silent installer file 
+- name: run the first part of the silent installer
+  command: su - tomcat /tmp/installer.sh 
+  sudo: yes
+  register: result
+  until: result.stdout.find(">>> installed sites") != -1
+  retries: 12
+  delay: 5
+  
+# Configure the tomcat server.xml
+- name: update the tomcat server.xml
+  template: src=customBeans.xml dest=/opt/oracle/wcs/bin/customBeans.xml  mode=0644 owner=tomcat group=tomcat 
+
+# Restart tomcat
+- service: name=tomcat state=restarted
+
+# Wait for tomcat to become available
+- wait_for: port=9090
+

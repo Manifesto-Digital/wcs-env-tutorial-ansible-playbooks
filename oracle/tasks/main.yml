@@ -1,0 +1,38 @@
+---
+# roles/oracle/tasks/main.yml
+- name: ensure packages required are installed
+  yum: pkg={{ item }} state=latest
+  with_items:
+    - libaio
+    - bc
+    - flex
+    - unzip
+
+- name: unzip oracle rpm
+  command: /usr/bin/unzip -q /vagrant/roles/oracle/files/oracle*.rpm.zip -d /vagrant creates=/vagrant/Disk1
+  tags: oracle
+
+- name: install oracle
+  shell: /bin/rpm -ivh /vagrant/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm creates=/u01
+
+- name: copy listener for xe config
+  template: src=xe.rsp dest=/tmp/xe.rsp  mode=0622
+
+- name: configure oracle
+  shell: /etc/init.d/oracle-xe configure responseFile=/tmp/xe.rsp
+  ignore_errors: True
+
+- name: setup oracle environment
+  shell: /bin/echo 'source /u01/app/oracle/product/11.2.0/xe/bin/oracle_env.sh' >> /home/vagrant/.bash_profile
+
+# - name: stop ip tables
+#   sudo: true
+#   shell: /sbin/service iptables stop
+#   tags: oracle
+
+- name: copy listener for sqlplus config
+  copy: src=set_listener.sql dest=/tmp/set_listener.sql  mode=0622
+
+- name: set oracle listener
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus
+    system/manager@localhost < /tmp/set_listener.sql

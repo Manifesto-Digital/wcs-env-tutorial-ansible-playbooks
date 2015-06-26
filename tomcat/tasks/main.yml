@@ -1,0 +1,39 @@
+---
+# roles/tomcat/tasks/main.yml
+- name: Install Java 1.7
+  yum: name=java-1.7.0-openjdk state=present
+
+- name: Download Tomcat
+  get_url: url={{tomcat_download_url}} dest=/opt/apache-tomcat-{{tomcat_version}}.tar.gz timeout=20
+
+- name: Extract archive
+  command: chdir=/usr/share /bin/tar xvf /opt/apache-tomcat-{{tomcat_version}}.tar.gz -C /usr/share/ creates=/usr/share/tomcat
+
+- name: Symlink install directory
+  file: src=/usr/share/apache-tomcat-{{tomcat_version}} path=/usr/share/tomcat state=link
+
+- name: Add group "tomcat"
+  group: name=tomcat
+
+- name: Add user "tomcat"
+  user: name=tomcat group=tomcat home=/usr/share/tomcat
+
+- name: Change ownership of Tomcat installation
+  file: path=/usr/share/tomcat/ owner=tomcat group=tomcat state=directory recurse=yes
+
+- name: Configure Tomcat server
+  template: src=server.xml dest=/usr/share/tomcat/conf/
+  notify: restart tomcat
+
+- name: Configure Tomcat users
+  template: src=tomcat-users.xml dest=/usr/share/tomcat/conf/
+  notify: restart tomcat
+
+- name: Install Tomcat init script
+  copy: src=tomcat-initscript.sh dest=/etc/init.d/tomcat mode=0755
+
+#- name: Start Tomcat
+#  service: name=tomcat state=restarted enabled=yes
+#
+#- name: wait for tomcat to start
+#  wait_for: port={{http_port}}
