@@ -9,11 +9,11 @@
     - unzip
 
 - name: unzip oracle rpm
-  command: /usr/bin/unzip -q /vagrant/roles/oracle/files/oracle*.rpm.zip -d /vagrant creates=/vagrant/Disk1
+  unarchive: src=oracle-xe-11.2.0-1.0.x86_64.rpm.zip dest=/tmp creates=/tmp/Disk1
   tags: oracle
 
 - name: install oracle
-  shell: /bin/rpm -ivh /vagrant/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm creates=/u01
+  shell: /bin/rpm -ivh /tmp/Disk1/oracle-xe-11.2.0-1.0.x86_64.rpm creates=/u01
 
 - name: copy listener for xe config
   template: src=xe.rsp dest=/tmp/xe.rsp  mode=0622
