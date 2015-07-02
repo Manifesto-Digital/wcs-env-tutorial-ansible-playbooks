@@ -1,0 +1,19 @@
+---
+# This role contains common plays that will run on all nodes.
+
+- name: be sure libselinux-python are installed
+  yum: >
+    name=libselinux-python
+    state=present
+
+- name: Create the repository for EPEL
+  copy: src=epel.repo dest=/etc/yum.repos.d/epel.repo
+
+- name: Create the GPG key for EPEL
+  copy: src=RPM-GPG-KEY-EPEL-5 dest=/etc/pki/rpm-gpg
+
+# Configure iptables. This is needed for vagrant
+- name: deploy iptables rules
+  template: src=iptables-save dest=/etc/sysconfig/iptables
+  notify: restart iptables
+  tags: [iptables]

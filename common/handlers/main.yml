@@ -1,0 +1,7 @@
+---
+# roles/common/handlers/main.yml
+- name: system reboot
+  command: /sbin/reboot -t now    
+
+- name: restart iptables
+  service: name=iptables state=restarted
