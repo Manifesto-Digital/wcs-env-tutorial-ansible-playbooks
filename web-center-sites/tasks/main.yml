@@ -12,11 +12,7 @@
 
 # Create the database using sqlplus
 - name: create the database
-  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe /u01/app/oracle/product/11.2.0/xe/bin/sqlplus system/manager@localhost < /tmp/create_wcs_user.sql
-
-# Create a directory for installation to run from
-- name: Creates directory for installation
-  file: path=/opt/oracle/install state=directory
+  shell: export ORACLE_HOME=/opt/oracle/instantclient_11_2; export LD_LIBRARY_PATH=$ORACLE_HOME:$LD_LIBRARY_PATH; export PATH=$ORACLE_HOME:$PATH; sqlplus system/manager@192.168.60.6:1521/XE < /tmp/create_wcs_user.sql
 
 # Start to prepare
 - name: unzip wcs top level installer
@@ -24,10 +20,15 @@
   sudo: yes
   tags: wcs
 
+# Create a directory for installation to run from
+- name: Creates directory for installation
+  file: path=/opt/oracle/install state=directory
+
 - name: unzip wcs installer
   command: /usr/bin/unzip -q -o /opt/oracle/WebCenterSites_11.1.1.8.0/WCS_Sites/WCS_Sites.zip -d /opt/oracle/install
   sudo: yes
   tags: wcs
+
 
 # create wcs shared directory
 - file: path=/mnt/wcs-shared state=directory owner=tomcat group=tomcat
@@ -66,7 +67,7 @@
   template: src=installer.sh dest=/tmp/installer.sh  mode=0755 owner=tomcat group=tomcat 
 
 # Execute the silent installer file 
-- name: run the silent installer
+- name: run the first part of the silent installer
   command: su - tomcat /tmp/installer.sh 
   sudo: yes
   register: result
