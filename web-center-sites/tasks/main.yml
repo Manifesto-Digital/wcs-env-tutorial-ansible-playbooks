@@ -12,7 +12,7 @@
 
 # Create the database using sqlplus
 - name: create the database
-  shell: export ORACLE_HOME=/opt/oracle/instantclient_11_2; export LD_LIBRARY_PATH=$ORACLE_HOME:$LD_LIBRARY_PATH; export PATH=$ORACLE_HOME:$PATH; sqlplus system/manager@192.168.60.6:1521/XE < /tmp/create_wcs_user.sql
+  shell: ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe; export LD_LIBRARY_PATH=$ORACLE_HOME:$LD_LIBRARY_PATH; export PATH=$ORACLE_HOME:$PATH; sqlplus system/manager@192.168.60.6:1521/XE < /tmp/create_wcs_user.sql
 
 # Start to prepare
 - name: unzip wcs top level installer
