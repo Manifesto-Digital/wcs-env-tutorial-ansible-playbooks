@@ -81,7 +81,7 @@
   tags: wcs
   
 # Execute the silent installer file 
-- name: run the first part of the silent installer
+- name: run silent installer
   command: su - tomcat /tmp/installer.sh 
   sudo: yes
   register: result

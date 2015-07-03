@@ -32,8 +32,8 @@
 - name: Install Tomcat init script
   copy: src=tomcat-initscript.sh dest=/etc/init.d/tomcat mode=0755
 
-#- name: Start Tomcat
-#  service: name=tomcat state=restarted enabled=yes
+- name: Enable Tomcat Service
+- service: name=httpd enabled=yes
 #
 #- name: wait for tomcat to start
 #  wait_for: port={{http_port}}
